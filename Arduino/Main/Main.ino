@@ -27,7 +27,6 @@ Adafruit_SSD1306 ecranOLED(nombreDePixelsEnLargeur, nombreDePixelsEnHauteur, &Wi
 
 // MESURE Pin pour mesure de la tension du capteur //////////
 const int capteurgraphitePin = 1;
-int Vadc;
 int PotPos = 127;
 
 // MESURE FLEX SENSOR
@@ -280,6 +279,7 @@ void CheckBoutons()
 //Amelioration, faire une fonction de tout ce qui est affichage répété dans les 3 fonctions suivantes
 void MesureINST()
 {
+  int Vadc=0;
   ecranOLED.clearDisplay();                                   // Effaçage de l'intégralité du buffer
   ecranOLED.setTextSize(1);                   // Taille des caractères (1:1, puis 2:1, puis 3:1)
   ecranOLED.setCursor(0, 0);
@@ -293,9 +293,7 @@ void MesureINST()
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= interval) {
       previousMillis = currentMillis;
-      Vadc = analogRead(capteurgraphitePin);
-
-      Serial.println(Vadc); // Afficher sur le port série la valeur de la tension mesuré en bytes
+       Vadc = analogRead(capteurgraphitePin);
       // mySerial.write(val); // Envoyer sur le port bluetooth la valeur acquise
       // mySerial.write("   "); // Envoyer sur le port bluetooth la valeur acquise
       DisplayAndTransmitter(Vadc,1);
@@ -401,6 +399,11 @@ void FlexSensor(){
 }
 
 void DisplayAndTransmitter(unsigned int VALUE, int choix){
+  int R3=100000;
+  int R2;
+  int Vcc=5;
+  int R1=100000;
+  int R5=10000;
   char VadcASCII[10];
   utoa(VALUE,VadcASCII,10);
   ecranOLED.clearDisplay();                                   // Effaçage de l'intégralité du buffer
@@ -416,6 +419,7 @@ void DisplayAndTransmitter(unsigned int VALUE, int choix){
   else{ecranOLED.setCursor(40, 30);}
   ecranOLED.print(VadcASCII);
   mySerial.write(VadcASCII); // Envoyer sur le port bluetooth la valeur acquise
+  Serial.println(VadcASCII); // Afficher sur le port série la valeur de la tension mesuré en bytes
   ecranOLED.display();                            // Transfert le buffer à l'écran
   delay(50);
 
@@ -430,7 +434,7 @@ int Calibration(){
   ecranOLED.println(F("Calibration en cours"));
   ecranOLED.display();    
   delay(2000);   
-  Vadc=analogRead(capteurgraphitePin);
+  int Vadc=analogRead(capteurgraphitePin);
   int tolerance=20; //Tolerance : 512+-20
   int V_Cible = 512;
   int a = 0;
