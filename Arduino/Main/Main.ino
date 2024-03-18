@@ -438,6 +438,7 @@ int Calibration(){
   int ite=0;
   while(abs(Vadc - V_Cible) > tolerance)
   {
+    Vadc=0;
     ite++;
     PotPos = (a + b)/2;
     setPotWiper(pot0,int(PotPos));
