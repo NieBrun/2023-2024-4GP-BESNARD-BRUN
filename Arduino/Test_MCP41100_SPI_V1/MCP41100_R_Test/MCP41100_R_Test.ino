@@ -55,14 +55,19 @@ void loop() {
   Serial.println("Pot 0 Control ");
 
   setPotWiper(pot0, 0);                    // minimum resistance
+  Serial.println(analogRead(1));
   delay(3000);
-  setPotWiper(pot0, 64);                   // 25% resistance
+  setPotWiper(pot0, 64);// 25% resistance
+  Serial.println(analogRead(1));
   delay(3000);
-  setPotWiper(pot0, 128);                  // 50% resistance
+  setPotWiper(pot0, 128); // 50% resistance
+  Serial.println(analogRead(1));                 
   delay(3000);
-  setPotWiper(pot0, 192);                  // 75% resistance
+  setPotWiper(pot0, 192);  // 75% resistance
+  Serial.println(analogRead(1));                
   delay(3000);
   setPotWiper(pot0, 255);                  // 100% resistance
+  Serial.println(analogRead(1));
   delay(3000);
 
   // move pot0 wiper from min to max in increments of 1 position

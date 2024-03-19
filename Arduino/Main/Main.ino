@@ -9,11 +9,12 @@ const long rAB             = 47000;   // 100k pot resistance between terminals A
 const byte rWiper          = 125;     // 125 ohms pot wiper resistance
 const byte pot0            = 0x11;    // pot0 addr // B 0001 0001
 const byte pot0Shutdown    = 0x21;    // pot0 shutdown // B 0010 0001
+long R2;
 
 //Bluetooth
 #include <SoftwareSerial.h>
-#define rxPin 8 // Correspondant à la broche tx du module bluetooth
-#define txPin 7 // Correspondant à la broche Rx du module bluetooth
+#define rxPin 7 // Correspondant à la broche tx du module bluetooth
+#define txPin 8 // Correspondant à la broche Rx du module bluetooth
 #define baudrate 9600 
 SoftwareSerial mySerial(rxPin ,txPin); //Definition du software serial
 
@@ -69,11 +70,11 @@ void setPotWiper(int addr, int pos) {
   digitalWrite(csPin, HIGH);               // de-select chip
 
   // print pot resistance between wiper and B terminal
-  // long resistanceWB = ((rAB * pos) / maxPositions ) + rWiper;
+  R2 = ((rAB * pos) / maxPositions ) + rWiper;
   // Serial.print("Wiper Position: ");
   // Serial.print(pos);
-  // Serial.print(" Resistance wiper to B terminal: ");
-  // Serial.print(resistanceWB);
+  Serial.print(" Resistance wiper to B terminal: ");
+  Serial.print(R2);
   // Serial.println(" ohms");
 }
 
@@ -279,7 +280,12 @@ void CheckBoutons()
 //Amelioration, faire une fonction de tout ce qui est affichage répété dans les 3 fonctions suivantes
 void MesureINST()
 {
+  int R3=100000;
+  int Vcc=5;
+  int R1=100000;
+  int R5=10000;
   int Vadc=0;
+  float Res=-1;
   ecranOLED.clearDisplay();                                   // Effaçage de l'intégralité du buffer
   ecranOLED.setTextSize(1);                   // Taille des caractères (1:1, puis 2:1, puis 3:1)
   ecranOLED.setCursor(0, 0);
@@ -293,10 +299,13 @@ void MesureINST()
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= interval) {
       previousMillis = currentMillis;
-       Vadc = analogRead(capteurgraphitePin);
+      Vadc = analogRead(capteurgraphitePin)*5.0/1024.0;
+      Res=((1+R3/R2)*R1/R2*Vcc/Vadc)-R1-R5;
+      Serial.print(F("RES= "));
+      Serial.println(Res);
       // mySerial.write(val); // Envoyer sur le port bluetooth la valeur acquise
       // mySerial.write("   "); // Envoyer sur le port bluetooth la valeur acquise
-      DisplayAndTransmitter(Vadc,1);
+      DisplayAndTransmitter(Res,1);
       CheckBoutons();
       }
   }while(!(OK == 1 || OK_TEL == 1));
@@ -319,6 +328,12 @@ void MesureINST()
 
 
 void MesureMoyenne(){
+  int R3=100000;
+  int Vcc=5;
+  int R1=100000;
+  int R5=10000;
+  int Vadc=0;
+  int Res=-1;
   ecranOLED.clearDisplay();                                   // Effaçage de l'intégralité du buffer
   ecranOLED.setTextSize(1);                   // Taille des caractères (1:1, puis 2:1, puis 3:1)
   ecranOLED.setCursor(0, 0);
@@ -330,13 +345,15 @@ void MesureMoyenne(){
   { 
     int moyenne=0;  
     for (int i = 0; i < 50; i++) {
-      moyenne=moyenne+analogRead(capteurgraphitePin);
+      moyenne=moyenne+(1+R3/R2)*Vcc/(analogRead(capteurgraphitePin)*5/1024)-R1-R5;
       CheckBoutons();
       delay(50);
     }
+    moyenne=moyenne/50;
+    //Res=(1+R3/R2)*Vcc/Vadc-R1-R5;
     Serial.print(F("Mesure moyennee :"));
-    Serial.println(moyenne/50);
-    DisplayAndTransmitter(int(moyenne/50),2);
+    Serial.println(Res);
+    DisplayAndTransmitter(int(Res),2);
   }while(!(OK == 1 || OK_TEL == 1));
   //Position=2;
   OK=0;
@@ -399,12 +416,7 @@ void FlexSensor(){
 }
 
 void DisplayAndTransmitter(unsigned int VALUE, int choix){
-  int R3=100000;
-  int R2;
-  int Vcc=5;
-  int R1=100000;
-  int R5=10000;
-  char VadcASCII[10];
+  char VadcASCII[15];
   utoa(VALUE,VadcASCII,10);
   ecranOLED.clearDisplay();                                   // Effaçage de l'intégralité du buffer
   ecranOLED.setTextSize(1);                   // Taille des caractères (1:1, puis 2:1, puis 3:1)
@@ -415,8 +427,7 @@ void DisplayAndTransmitter(unsigned int VALUE, int choix){
   else if(choix==3){ecranOLED.println(F("Mesure Flex Sensor :"));}
   else if(choix==4){ecranOLED.println(F("Calibration en cours"));}
   ecranOLED.setTextSize(3);                   // Taille des caractères (1:1, puis 2:1, puis 3:1)
-  if(choix==3){ecranOLED.setCursor(0, 30);}
-  else{ecranOLED.setCursor(40, 30);}
+  ecranOLED.setCursor(0, 30);
   ecranOLED.print(VadcASCII);
   mySerial.write(VadcASCII); // Envoyer sur le port bluetooth la valeur acquise
   Serial.println(VadcASCII); // Afficher sur le port série la valeur de la tension mesuré en bytes
